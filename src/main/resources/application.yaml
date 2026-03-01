@@ -1,0 +1,36 @@
+parser:
+  urls:
+    - "https://lis-skins.com/ru/market/csgo/%E2%98%85-stiletto-knife-crimson-web-minimal-wear/"
+    - "https://lis-skins.com/ru/market/csgo/awp-desert-hydra-battle-scarred/"
+    - "https://lis-skins.com/ru/market/csgo/ak-47-wild-lotus-well-worn/"
+    - "https://lis-skins.com/ru/market/csgo/%E2%98%85-butterfly-knife-blue-steel-factory-new/"
+    - "https://lis-skins.com/ru/market/csgo/sticker-apex-gold-krakow-2017/"
+    - "https://lis-skins.com/ru/market/csgo/%E2%98%85-sport-gloves-superconductor-battle-scarred/"
+    - "https://lis-skins.com/ru/market/csgo/sticker-spiidi-gold-boston-2018/"
+    - "https://lis-skins.com/ru/market/csgo/sticker-guardian-gold-krakow-2017/"
+    - "https://lis-skins.com/ru/market/csgo/awp-fade-minimal-wear/"
+  timeout: 80000
+  scheduled:
+    time: 100000
+
+browser:
+  context:
+    viewport:
+      width: 1920
+      height: 1080
+    user:
+      agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    locale: "ru-RU"
+    timezone: "Europe/Moscow"
+  launch:
+    headless: true
+    args:
+      - "--disable-blink-features=AutomationControlled"
+      - "--disable-automation"
+      - "--no-sandbox"
+
+database:
+  url: "${DATABASE_URL}"
+  username: "${DATABASE_USERNAME}"
+  password: "${DATABASE_PASSWORD}"
+  driver-class-name: "org.postgresql.Driver"

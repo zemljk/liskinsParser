@@ -1,14 +1,15 @@
 package org.example.properties;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
-@Getter
-@Setter
+import java.util.List;
+
+@Data
 @Configuration
-@ConfigurationProperties(prefix = "parser.site")
-public class PageSkinsProperties {
-    private String url;
+@ConfigurationProperties(prefix = "parser")
+public class ParserProperties {
+    private List<String> urls;
+    private Integer timeout;
 }
