@@ -1,53 +1,37 @@
 package org.example.service;
 
-import com.microsoft.playwright.Browser;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.playwright.BrowserContext;
-import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.TimeoutError;
-import com.microsoft.playwright.options.WaitUntilState;
 import io.github.kihdev.playwright.stealth4j.Stealth4j;
 import io.github.kihdev.playwright.stealth4j.Stealth4jConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.model.browser.BrowserContextOptions;
-import org.example.model.browser.BrowserLaunchOptions;
+import org.example.dto.SkinDto;
+import org.example.exceptions.JsonLdNotFoundException;
+import org.example.model.skins.ProductJsonLd;
 import org.example.properties.BrowserProperties;
 import org.example.properties.ParserProperties;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class SkinsPages {
-
+    private final BrowserService browserService;
+    private final NavigateOptionsService navigateOptionsService;
     private final BrowserProperties browserProperties;
     private final ParserProperties properties;
 
-    private void parseWithStealth() {
+    private void parseWithStealth(String url) {
         try (Playwright playwright = Playwright.create()) {
+            BrowserContext context = browserService.createBrowserContext();
+            Page.NavigateOptions navigateOptions = navigateOptionsService.createNavigateOptions();
 
-            // Создаем настройки для запуска браузера
-            BrowserLaunchOptions browserLaunchOptions = new BrowserLaunchOptions(browserProperties);
-            BrowserType.LaunchOptions launchOptions = browserLaunchOptions.getLaunchOptions();
-
-            // Запускаем браузер
-            Browser browser = playwright.chromium().launch(launchOptions);
-            BrowserContextOptions browserContextOptions = new BrowserContextOptions(browserProperties);
-            BrowserContext context = browser.newContext(browserContextOptions.getContext());
-
-            Page.NavigateOptions navigateOptions = new Page.NavigateOptions()
-                    .setTimeout(properties.getTimeout())
-                    .setWaitUntil(WaitUntilState.NETWORKIDLE);
             // Создаем stealth конфигурацию
             Stealth4jConfig config = Stealth4jConfig.builder()
                     .build();
@@ -55,47 +39,62 @@ public class SkinsPages {
             // Создаем stealth страницу
             Page page = Stealth4j.newStealthPage(context, config);
 
-            log.info("Navigating to lis-skins.com in headless mode...");
+            log.info("Navigating to your URL in headless mode...");
 
-            // Переходим на сайт с таймаутом
-            List<String> urls = properties.getUrls();
+            page.navigate(url, navigateOptions);
 
-            goToSite(urls, page, navigateOptions);
-
-            // Ждем загрузки контента
             try {
                 page.waitForSelector("body", new Page.WaitForSelectorOptions().setTimeout(10000));
-                System.out.println("Page loaded successfully!");
+                log.info("Page loaded successfully!");
             } catch (TimeoutError e) {
-                System.err.println("Warning: Page load timeout");
+                log.error("Warning: Page load timeout");
             }
 
-            // Сохраняем HTML
-            saveHtmlWithLocalDateTime(page);
+            ProductJsonLd productJsonLd = extractAndParseJsonTyped(page);
+            SkinDto skinDto = productJsonLdToDto(productJsonLd);
 
         } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
+            log.error("Error: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
-    private void saveHtmlWithLocalDateTime(Page page) throws IOException {
-        String htmlContent = page.content();
-        LocalDateTime localDateTime = LocalDateTime.now();
-        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH-mm");
-        String formatedDateAndTimeForWindowsTemplate = localDateTime.format(dateTimeFormatter).replaceAll(":", "-");
-        String name = "page-content" + formatedDateAndTimeForWindowsTemplate + ".html";
-        Files.write(Paths.get("target", name), htmlContent.getBytes());
-        System.out.println("HTML content saved to:" + name);
+    private SkinDto productJsonLdToDto(ProductJsonLd productJsonLd) {
+        return SkinDto.builder()
+                .name(productJsonLd.getName())
+                .image(productJsonLd.getImage())
+                .url(productJsonLd.getOffers().getUrl())
+                .priceCurrency(productJsonLd.getOffers().getPriceCurrency())
+                .lowPrice(productJsonLd.getOffers().getLowPrice())
+                .highPrice(productJsonLd.getOffers().getHighPrice())
+                .build();
     }
 
-    private void goToSite(List<String> urls, Page page, Page.NavigateOptions navigateOptions) {
-        urls.forEach((url) -> page.navigate(url, navigateOptions));
+    private ProductJsonLd extractAndParseJsonTyped(Page page) {
+        try {
+            var jsonScripts = page.locator("script[type='application/ld+json']").all();
+            ObjectMapper mapper = new ObjectMapper();
+
+            for (var script : jsonScripts) {
+                String jsonText = script.textContent();
+                if (jsonText == null || jsonText.isBlank())
+                    continue;
+
+                return mapper.readValue(jsonText, ProductJsonLd.class);
+            }
+        } catch (Exception e) {
+            log.error("Error parsing JSON-LD: {}", e.getMessage(), e);
+        }
+        throw new JsonLdNotFoundException("Product JSON-LD not found on page: " + page.url());
+    }
+
+    @Async
+    public void parseUrlAsync(String url) {
+        parseWithStealth(url);
     }
 
     @Scheduled(fixedRate = 100000)
-    private void run() {
-        parseWithStealth();
+    public void run() {
+        properties.getUrls().forEach(this::parseUrlAsync);
     }
-
 }

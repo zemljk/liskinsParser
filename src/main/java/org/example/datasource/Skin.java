@@ -11,7 +11,6 @@ import java.time.LocalDateTime;
 public class Skin {
     private Integer id;
     private String name;
-    private String exterior;
     private String price;
     private String itemUrl;
     private LocalDateTime lastUpdated;
