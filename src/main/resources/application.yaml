@@ -29,6 +29,12 @@ browser:
       - "--disable-automation"
       - "--no-sandbox"
 
+product-json:
+  selector: "script[type='application/ld+json']"
+
+scheduler:
+  interval: 100000
+
 database:
   url: "${DATABASE_URL}"
   username: "${DATABASE_USERNAME}"
