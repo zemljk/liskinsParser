@@ -14,16 +14,17 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class BrowserService {
     private final BrowserProperties browserProperties;
-        public BrowserContext createBrowserContext(){
-            Playwright playwright = Playwright.create();
-            // Создаем настройки для запуска браузера
-            BrowserLaunchOptions browserLaunchOptions = new BrowserLaunchOptions(browserProperties);
-            BrowserType.LaunchOptions launchOptions = browserLaunchOptions.getLaunchOptions();
 
-            // Запускаем браузер
-            Browser browser = playwright.chromium().launch(launchOptions);
-            BrowserContextOptions browserContextOptions = new BrowserContextOptions(browserProperties);
-            BrowserContext context = browser.newContext(browserContextOptions.getContext());
-            return context;
-        }
+    public BrowserContext createBrowserContext() {
+        Playwright playwright = Playwright.create();
+        // Создаем настройки для запуска браузера
+        BrowserLaunchOptions browserLaunchOptions = new BrowserLaunchOptions(browserProperties);
+        BrowserType.LaunchOptions launchOptions = browserLaunchOptions.getLaunchOptions();
+
+        // Запускаем браузер
+        Browser browser = playwright.chromium().launch(launchOptions);
+        BrowserContextOptions browserContextOptions = new BrowserContextOptions(browserProperties);
+        BrowserContext context = browser.newContext(browserContextOptions.getContext());
+        return context;
+    }
 }

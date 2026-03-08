@@ -7,6 +7,7 @@ import com.microsoft.playwright.TimeoutError;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.dto.SkinDto;
+import org.example.mapper.ProductJsonToDtoMapper;
 import org.example.model.skins.ProductJson;
 import org.example.properties.ParserProperties;
 import org.springframework.scheduling.annotation.Async;
@@ -22,7 +23,7 @@ public class SkinsPages {
     private final NavigateOptionsService navigateOptionsService;
     private final ParserProperties properties;
 
-    private final ObjectMapper mapper= new ObjectMapper();
+    private final ObjectMapper mapper = new ObjectMapper();
 
     private void parseWithStealth(String url) {
         try (Playwright playwright = Playwright.create()) {

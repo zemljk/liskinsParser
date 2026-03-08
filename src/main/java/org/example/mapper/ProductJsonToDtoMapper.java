@@ -1,4 +1,4 @@
-package org.example.service;
+package org.example.mapper;
 
 import org.example.dto.SkinDto;
 import org.example.model.skins.ProductJson;
